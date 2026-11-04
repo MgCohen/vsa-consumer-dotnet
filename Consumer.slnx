@@ -3,35 +3,7 @@
     <Project Path="App/Host/App.Host.csproj" />
     <Project Path="App/Views/App.Views.csproj" />
   </Folder>
-  <Folder Name="/App/Host/" />
-  <Folder Name="/Modules/">
-    <Project Path="Modules/Counter/Counter.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/" />
-  <Folder Name="/Modules/Counter/Contracts/" />
-  <Folder Name="/Modules/Counter/Contracts/Events/">
-    <Project Path="Modules/Counter/Contracts/Events/Counter.Contracts.Events.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/Contracts/Requests/">
-    <Project Path="Modules/Counter/Contracts/Requests/Counter.Contracts.Requests.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/Domain/">
-    <Project Path="Modules/Counter/Domain/Counter.Domain.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/Handlers/" />
-  <Folder Name="/Modules/Counter/Handlers/Events/">
-    <Project Path="Modules/Counter/Handlers/Events/Counter.Handlers.Events.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/Handlers/Requests/">
-    <Project Path="Modules/Counter/Handlers/Requests/Counter.Handlers.Requests.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/Infrastructure/">
-    <Project Path="Modules/Counter/Infrastructure/Counter.Infrastructure.csproj" />
-  </Folder>
-  <Folder Name="/Modules/Counter/Presenters/">
-    <Project Path="Modules/Counter/Presenters/Counter.Presenters.csproj" />
-  </Folder>
   <Folder Name="/Tests/">
-    <Project Path="Tests/Consumer.Tests.csproj" />
+    <Project Path="Tests/App.Tests.csproj" />
   </Folder>
 </Solution>
