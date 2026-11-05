@@ -1,3 +1,0 @@
-namespace Counter.Contracts.Requests.GetStatus;
-
-public sealed record GetStatusResponse(string Module, string Status);

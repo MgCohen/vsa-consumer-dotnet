@@ -9,7 +9,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../Modules/*/Presenters/*.csproj" PrivateAssets="all" />
-    <PackageReference Include="VSA.Views" Version="0.1.0-preview.3" />
+    <ProjectReference Include="../../Modules/*/Projects/*.Presenters.csproj" PrivateAssets="all" />
+    <PackageReference Include="VSA.Views" Version="0.1.0-preview.5" />
   </ItemGroup>
 </Project>

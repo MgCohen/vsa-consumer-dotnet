@@ -1,4 +1,4 @@
-using Counter.Contracts.Requests.GetStatus;
+using Counter.Slices.GetStatus;
 using VSA.Testing.Unit;
 
 namespace App.Tests;
