@@ -1,4 +1,4 @@
-using Counter.Contracts.Requests.GetStatus;
+using Counter.Slices.GetStatus;
 using VSA.Presenters;
 
 namespace Counter.Presenters;

@@ -1,6 +1,6 @@
 using VSA.Contracts.Requests;
 
-namespace Counter.Contracts.Requests.Increment;
+namespace Counter.Slices.Increment;
 
 // Add the input of the request as record parameters.
 public sealed record IncrementRequest : IRequest<IncrementResponse> {

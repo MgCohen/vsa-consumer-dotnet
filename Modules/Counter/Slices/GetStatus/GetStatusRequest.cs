@@ -1,6 +1,6 @@
 using VSA.Contracts.Requests;
 
-namespace Counter.Contracts.Requests.GetStatus;
+namespace Counter.Slices.GetStatus;
 
 public sealed record GetStatusRequest : IRequest<GetStatusResponse> {
     public static HttpMethod Method => HttpMethod.Get;
