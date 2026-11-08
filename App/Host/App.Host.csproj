@@ -11,6 +11,6 @@
     <!-- No PrivateAssets: a test project that references the host also gets the module layers. -->
     <ProjectReference Include="../Views/App.Views.csproj" />
     <ProjectReference Include="../../Modules/*/*.csproj" />
-    <PackageReference Include="VSA.Host" Version="0.1.0-preview.6" />
+    <PackageReference Include="VSA.Host" Version="0.1.0-preview.8" />
   </ItemGroup>
 </Project>
