@@ -1,11 +1,14 @@
+using Counter.Domain;
+using Counter.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using VSA.Infrastructure;
 using VSA.Module;
 
 namespace Counter;
 
-// The root of the Counter module. The host finds it and calls Configure at start-up.
-// When Domain has an aggregate, register the database here, for example:
-//   module.AddDatabase(o => o.UseSqlite(settings.ConnectionString));
-public sealed class CounterModule : Module {
-    public override void Configure(ModuleBuilder module) {
+public sealed class CounterModule : Module<CounterSettings> {
+    public override void Configure(ModuleBuilder module, CounterSettings settings) {
+        module.Services.AddSingleton(new TallyStore(Tally.Create(TallyId.Main, settings.Max)));
+        module.Services.AddScoped<IRepository<Tally, TallyId>, TallyRepository>();
     }
 }
