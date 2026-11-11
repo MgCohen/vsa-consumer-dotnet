@@ -3,6 +3,30 @@
     <Project Path="App/Host/App.Host.csproj" />
     <Project Path="App/Views/App.Views.csproj" />
   </Folder>
+  <Folder Name="/Modules/">
+    <Project Path="Modules/Counter/Counter.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Counter/" />
+  <Folder Name="/Modules/Counter/Projects/">
+    <Project Path="Modules/Counter/Projects/Counter.Contracts.Commands.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Contracts.Events.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Contracts.Requests.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Domain.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Domain.Shared.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Handlers.Commands.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Handlers.Events.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Handlers.Requests.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Infrastructure.csproj" />
+    <Project Path="Modules/Counter/Projects/Counter.Presenters.csproj" />
+  </Folder>
+  <Folder Name="/Plugins/">
+    <Project Path="Plugins/Journal/Journal.csproj" />
+  </Folder>
+  <Folder Name="/Plugins/Journal/" />
+  <Folder Name="/Plugins/Journal/Projects/">
+    <Project Path="Plugins/Journal/Projects/Journal.Contracts.Requests.csproj" />
+    <Project Path="Plugins/Journal/Projects/Journal.Handlers.Requests.csproj" />
+  </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/App.Tests.csproj" />
   </Folder>

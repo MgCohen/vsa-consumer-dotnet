@@ -1,0 +1,11 @@
+@inherits PresenterComponent<CounterPresenter>
+
+<p>@Presenter.Value of @Presenter.Max</p>
+<button disabled="@Presenter.Increment.Busy" @onclick="() => Presenter.IncrementAsync(1)">Add 1</button>
+@foreach (var error in new[] { Presenter.Load.Error, Presenter.Increment.Error }.OfType<string>()) {
+    <p class="error">@error</p>
+}
+
+@code {
+    protected override Task OnInitializedAsync() => Presenter.LoadAsync();
+}
