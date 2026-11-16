@@ -1,3 +1,3 @@
-namespace Journal.Contracts.Requests;
+namespace Consumer.Plugins.Journal.Contracts.Requests;
 
 public abstract record Journaled;

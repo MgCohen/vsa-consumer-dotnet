@@ -1,29 +1,37 @@
-using Counter.Presenters;
-using Counter.Slices.Increment;
-using Counter.Slices.Reset;
-using Journal.Handlers.Requests;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using VSA.Composition;
-using VSA.Contracts.Commands;
-using VSA.Presenters;
+namespace Consumer.Tests;
 
-namespace App.Tests;
+using Consumer.App.Host;
+using Consumer.Features.Counter.Presenters;
+using Consumer.Features.Counter.Slices.Increment;
+using Consumer.Features.Counter.Slices.Reset;
+using Consumer.Plugins.Journal.Handlers.Requests;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Umpire.Vsa;
+using Umpire.Vsa.Composition;
+using Umpire.Vsa.Contracts.Commands;
+using Umpire.Vsa.Presenters;
 
 public sealed class CompositionTests {
-    static IHost App(int max) => VsaBuilder.Create($"--Modules:Counter:Max={max}").UseGenericHost().Build();
+    static ServiceProvider App(int max) {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Modules:Counter:Max"] = $"{max}" })
+            .Build();
+        var services = new ServiceCollection().AddSingleton<IConfiguration>(configuration);
+        return new Vsa<VsaHost>().CreateHost().Compose(services, new ConsumerApp()).BuildServiceProvider();
+    }
 
     [Test]
     public async Task The_journal_plugin_writes_each_increment() {
-        using var app = App(max: 3);
-        await using var scope = app.Services.CreateAsyncScope();
+        await using var app = App(max: 3);
+        await using var scope = app.CreateAsyncScope();
         var bus = scope.ServiceProvider.GetRequiredService<IBus>();
 
         await bus.Send(new IncrementRequest(2));
         await bus.Send(new IncrementRequest(2));
         await bus.Send(new IncrementRequest(0));
 
-        Assert.That(app.Services.GetRequiredService<JournalLog>().Lines, Is.EqualTo(new[] {
+        Assert.That(app.GetRequiredService<JournalLog>().Lines, Is.EqualTo(new[] {
             "IncrementRequest: Accepted",
             "IncrementRequest: Accepted counter.at_max",
             "IncrementRequest: Rejected counter.amount_not_positive",
@@ -32,8 +40,8 @@ public sealed class CompositionTests {
 
     [Test]
     public async Task The_presenter_gets_the_event_of_its_module() {
-        using var app = App(max: 3);
-        await using var scope = app.Services.CreateAsyncScope();
+        await using var app = App(max: 3);
+        await using var scope = app.CreateAsyncScope();
         var counter = scope.ServiceProvider.GetRequiredService<CounterPresenter>();
 
         await counter.LoadAsync();
@@ -44,8 +52,8 @@ public sealed class CompositionTests {
 
     [Test]
     public async Task Another_module_sends_the_Reset_command() {
-        using var app = App(max: 3);
-        await using var scope = app.Services.CreateAsyncScope();
+        await using var app = App(max: 3);
+        await using var scope = app.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<IBus>().Send(new IncrementRequest(2));
 
         var reset = await scope.ServiceProvider.GetRequiredService<ICommandSender>().SendAsync(new ResetCommand(), CancellationToken.None);

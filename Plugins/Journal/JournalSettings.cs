@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+namespace Consumer.Plugins.Journal;
 
-namespace Journal;
+using System.ComponentModel.DataAnnotations;
 
 public sealed class JournalSettings {
     [Range(1, 10_000)]
