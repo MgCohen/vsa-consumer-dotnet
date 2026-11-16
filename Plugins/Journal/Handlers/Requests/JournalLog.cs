@@ -1,4 +1,4 @@
-namespace Journal.Handlers.Requests;
+namespace Consumer.Plugins.Journal.Handlers.Requests;
 
 public sealed class JournalLog(int maxLines) {
     readonly Queue<string> lines = new();

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <Sdk Name="Umpire.Sdk" />
+  <PropertyGroup>
+    <RootNamespace>Consumer</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Umpire.Vsa.Hosts.Web" Version="0.1.0" />
+    <PackageReference Include="Umpire.Vsa.Views" Version="0.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Umpire.Engine.Build" Version="0.1.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

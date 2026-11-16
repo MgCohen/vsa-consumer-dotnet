@@ -1,6 +1,6 @@
 # vsa-consumer-dotnet
 
-A .NET app that uses the published VSA packages from [vsa-template](https://github.com/MgCohen/vsa-template). It has one module (`Counter`) and one plugin module (`Journal`). CI restores, builds and tests the app with the packages from GitHub Packages, so it is also the release check of VSA for .NET.
+A .NET app that uses the published Umpire packages from [vsa-template](https://github.com/MgCohen/vsa-template), with the VSA pack. It has one feature module (`Counter`) and one plugin module (`Journal`). CI restores, builds, checks and tests the app with the packages from GitHub Packages, so it is also the release check of Umpire for .NET.
 
 ## What the app shows
 
@@ -16,13 +16,13 @@ flowchart LR
 
 | Part | File | Shows |
 |---|---|---|
-| Host | `App/Host/Program.cs` | The one start line |
-| Module root | `Modules/Counter/CounterModule.cs` | Settings, services, repository |
+| App class | `App/Host/ConsumerApp.cs` | The pack and the web host |
+| Module root | `Features/Counter/CounterModule.cs` | Settings, services, repository |
 | Plugin root | `Plugins/Journal/JournalPlugin.cs` | Settings, a custom pipeline |
 | Validator | `Slices/Increment/IncrementValidator.cs` | A check before the handler |
 | Command | `Slices/Reset/` | A message for other modules |
 | Presenter | `Presenters/CounterPresenter.cs` | Requests down, events up |
-| Tests | `Tests/` | Unit tests and composition tests |
+| Tests | `Tests/` | Unit, composition and architecture tests |
 
 ## Start a project
 
@@ -30,43 +30,41 @@ flowchart LR
    ```bash
    export GITHUB_TOKEN=$(gh auth token)
    ```
-2. Make the app:
+2. Make the app. The folder must have a `nuget.config` with the Umpire feed, for example the one of this repo:
    ```bash
-   dotnet tool exec VSA.Cli@0.1.0-preview.9 -- new app Consumer
+   dotnet tool exec Umpire.Cli@0.1.0 -y -- new app Consumer
    ```
 3. Add the code:
    ```bash
    cd Consumer
-   dotnet tool restore
-   dotnet vsa add module Counter
-   dotnet vsa add request Increment -m Counter
-   dotnet vsa add request GetCount -m Counter
-   dotnet vsa add command Reset -m Counter
-   dotnet vsa add plugin Journal
+   dotnet umpire add module Counter
+   dotnet umpire add request Increment -m Counter
+   dotnet umpire add request GetCount -m Counter
+   dotnet umpire add command Reset -m Counter
+   dotnet umpire add plugin Journal
    ```
 4. Run the tests and the app:
    ```bash
    dotnet test --solution Consumer.slnx
-   dotnet run --project App/Host
+   dotnet run --project Consumer.csproj
    ```
 
-The tool writes only new files. These commands made the files of this repo. The code in the slices, the roots and `Tests/` is custom code on top of them.
+The tool writes only new files. The code in the slices, the roots and `Tests/` is custom code on top of them.
 
-## Use VSA as a dependency
+## Use Umpire as a dependency
 
-The app gets VSA from NuGet packages only. It has no copy of the framework source.
+The app gets Umpire from NuGet packages only. It has no copy of the framework source.
 
-| File | VSA item |
+| File | Umpire item |
 |---|---|
-| `global.json` | `VSA.Sdk` version (`msbuild-sdks`) |
-| `dotnet-tools.json` | `vsa.cli` version |
-| Each module or plugin `.csproj` | `<Project Sdk="VSA.Sdk" />` |
-| `App/Host/App.Host.csproj` | `VSA.Host` |
-| `App/Views/App.Views.csproj` | `VSA.Views` |
-| `Tests/App.Tests.csproj` | `VSA.Testing.Architecture`, `VSA.Testing.Unit` |
+| `global.json` | `Umpire.Sdk` version (`msbuild-sdks`) |
+| `dotnet-tools.json` | `umpire.cli` version |
+| `Consumer.csproj` | `Umpire.Sdk`, `Umpire.Vsa.Hosts.Web`, `Umpire.Vsa.Views`, `Umpire.Engine.Build` |
+| `Tests/App.Tests.csproj` | `Umpire.Vsa.Testing.Unit` |
+| `Directory.Build.props` | All build output in `artifacts~/` |
 | `nuget.config` | The GitHub Packages feed, token from `GITHUB_TOKEN` |
 
-VSA.Sdk gives each module project its files and its references. Do not add references or `Compile` items to a module project.
+`Consumer.csproj` is the one root project. It compiles each file in `App/`, `Features/` and `Plugins/`. A module, a slice or a plugin module needs no project.
 
 GitHub Packages needs a token, also for public packages:
 
@@ -77,20 +75,20 @@ GitHub Packages needs a token, also for public packages:
 
 ## Composition root
 
-The host has one line. It finds the modules and the views by itself.
+The app class selects the pack and the host:
 
 ```csharp
-await VsaBuilder.Create(args).UseWebHost().Build().RunAsync();
+public class ConsumerApp : App<Vsa<WebVsaHost>>;
 ```
 
-`Build()` configures the parts in this order:
+`Program.cs` runs it: `return new ConsumerApp().Run(args);`. `Compose` configures the parts in this order:
 
 ```mermaid
 flowchart TD
-    A[AppScan finds roots] --> B[VSA layer installers]
+    A[AppTypes finds roots] --> B[VSA layer installers]
     B --> C[Plugin roots: Journal]
     C --> D[Module roots: Counter]
-    D --> E[Host maps routes and views]
+    D --> E[App ConfigureServices]
 ```
 
 ### A module root
@@ -99,39 +97,35 @@ A module root inherits `Module` or `Module<TSettings>`. The host binds `Modules:
 
 ```csharp
 public sealed class CounterModule : Module<CounterSettings> {
-    public override void Configure(ModuleBuilder module, CounterSettings settings) {
-        module.Services.AddSingleton(new TallyStore(Tally.Create(TallyId.Main, settings.Max)));
-        module.Services.AddScoped<IRepository<Tally, TallyId>, TallyRepository>();
+    public override void Configure(IServiceCollection services, CounterSettings settings) {
+        services.AddSingleton(new TallyStore(Tally.Create(TallyId.Main, settings.Max)));
+        services.AddScoped<IRepository<Tally, TallyId>, TallyRepository>();
     }
 }
 ```
 
-The root registers only what the host cannot find. The host finds the handlers, the validators, the Before and After events and the presenters by their base types.
+The root registers only what the host cannot find. The host finds the handlers, the validators and the presenters by their base types.
 
 ### A plugin root
 
-A plugin module is in `Plugins/<Name>/` and its root inherits `Plugin` or `Plugin<TSettings>`. Each layer of each module gets the same layer of the plugin module. The host configures the plugin roots before the module roots.
+A plugin module is in `Plugins/<Name>/` and its root inherits `Plugin` or `Plugin<TSettings>`. The host configures the plugin roots before the module roots.
 
 ```csharp
 public sealed class JournalPlugin : Plugin<JournalSettings> {
-    public override void Configure(ModuleBuilder module, JournalSettings settings) {
-        module.Services.AddSingleton(new JournalLog(settings.MaxLines));
-        module.Services.AddPipeline(new PipelineBuilder<Journaled>()
+    public override void Configure(IServiceCollection services, JournalSettings settings) {
+        services.AddSingleton(new JournalLog(settings.MaxLines));
+        services.AddPipeline(new PipelineBuilder<Journaled>()
             .HandlersOf(typeof(RequestHandler<,>))
             .AfterStep<WriteJournal>());
     }
 }
 ```
 
-A request of a module that derives from `Journaled` goes through this pipeline. Other requests use the default pipeline.
-
-```csharp
-public sealed record IncrementRequest(int Amount) : Journaled, IRequest<IncrementResponse> { ... }
-```
+A request that derives from `Journaled` goes through this pipeline. Other requests use the default pipeline.
 
 ### Settings
 
-`App/Host/appsettings.json` gives the settings of each root:
+`appsettings.json` gives the settings of each root:
 
 ```json
 "Modules": {
@@ -144,18 +138,30 @@ If a value is not valid, the start stops with `Modules:Counter is not valid: ...
 
 ### Composition in a test
 
-A test starts the same app with the generic host, with no ASP.NET Core:
+A test composes the same app with the generic host, with no ASP.NET Core:
 
 ```csharp
-using var app = VsaBuilder.Create("--Modules:Counter:Max=3").UseGenericHost().Build();
-await using var scope = app.Services.CreateAsyncScope();
-await scope.ServiceProvider.GetRequiredService<IBus>().Send(new IncrementRequest(2));
+var services = new ServiceCollection().AddSingleton<IConfiguration>(configuration);
+await using var app = new Vsa<VsaHost>().CreateHost().Compose(services, new ConsumerApp()).BuildServiceProvider();
 ```
 
 See `Tests/CompositionTests.cs`.
 
-## Update VSA
+## Architecture check
 
-1. Set the new version in `global.json`, `dotnet-tools.json`, `App/Host/App.Host.csproj`, `App/Views/App.Views.csproj` and `Tests/App.Tests.csproj`.
-2. Run `dotnet vsa doctor`. It shows each version that is different.
-3. Run the tests. If the release is new, use `dotnet restore --no-http-cache` one time.
+Each build of `Consumer.csproj` runs the rule engine. An error fails the build.
+
+`umpire-baseline.txt` holds the errors that the build accepts. Each entry is a rule that fires on code that the Umpire docs allow:
+
+| Code | Files | Reason |
+|---|---|---|
+| `UMP020101` | `IncrementValidator.cs` | The VSA pack has no part for a validator in a slice |
+| `UMP020201` | `Plugins/Journal/**` | The pack has no part for a request base or a pipeline step |
+
+If a fix in Umpire makes an entry stale, the engine gives `UMP030501`. Then run `dotnet build Consumer.csproj -p:UmpireUpdateBaseline=true`.
+
+## Update Umpire
+
+1. Run `dotnet umpire update`. It changes the tool manifest, `global.json` and the project files.
+2. Run `dotnet umpire doctor`. It shows each version that is different.
+3. Run the build and the tests. If the release is new, use `dotnet restore --no-http-cache` one time.

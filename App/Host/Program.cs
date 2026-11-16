@@ -1,4 +1,3 @@
-using VSA.Composition;
-using VSA.Host;
+using Consumer.App.Host;
 
-await VsaBuilder.Create(args).UseWebHost().Build().RunAsync();
+return new ConsumerApp().Run(args);

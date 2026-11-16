@@ -1,8 +1,8 @@
-using Counter.Domain;
-using Counter.Slices.Reset;
-using VSA.Testing.Unit;
+namespace Consumer.Tests;
 
-namespace App.Tests;
+using Consumer.Features.Counter.Domain;
+using Consumer.Features.Counter.Slices.Reset;
+using Umpire.Vsa.Testing.Unit;
 
 public sealed class ResetTests : VsaUnitTest {
     [Test]

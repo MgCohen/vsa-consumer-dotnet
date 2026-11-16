@@ -1,53 +1,61 @@
 # AGENTS.md
 
-Instructions for AI coding agents (and humans) working in Consumer. Consumer uses the VSA framework: Vertical Slice Architecture with one folder for each module.
+Instructions for AI coding agents (and humans) working in Consumer. Consumer uses Umpire with the VSA pack: Vertical Slice Architecture with one folder for each module.
 
 ## Layout
 
 | Path             | Purpose                                                              |
 |------------------|----------------------------------------------------------------------|
-| `App/Host/`      | The web host. `Program.cs` calls `VsaBuilder.Create(args).UseWebHost()`, which finds the modules and the views |
+| `Consumer.csproj` | The one root project. It compiles `App/`, `Features/` and `Plugins/` |
+| `App/Host/`      | The web host. `Program.cs` calls `new ConsumerApp().Run(args)`. The app class `ConsumerApp : App<Vsa<WebVsaHost>>` starts the app, finds the modules and the views, and gives the definition |
 | `App/Views/`     | The Blazor views. Each module has its page in `App/Views/Pages/`     |
-| `Modules/<Name>/`| One module: its root project, `Projects/` (one project for each layer), `Domain/`, `Infrastructure/`, `Presenters/` and `Slices/<Feature>/` |
+| `Features/<Name>/`| One feature module: its root class, `Domain/`, `Infrastructure/`, `Presenters/` and `Slices/<Slice>/` |
 | `Plugins/<Name>/`| One plugin module: a base of the same layers in each module. It has one folder for each layer, and no `Slices/` |
-| `Tests/`         | The VSA architecture tests, and one unit test file for each module  |
+| `Tests/`         | A nested project: one unit test file for each module                |
 
-A module project is only `<Project Sdk="VSA.Sdk" />`. VSA.Sdk gives each project its files and its references. In `Slices/`, the type in each file selects its project: requests and responses go to `Contracts.Requests`, commands and their results to `Contracts.Commands`, events to `Contracts.Events`, and the other files to the handlers project of the slice. Do not add references or `Compile` items to a module project by hand: the build fails with `VSA0001` or `VSA0006`.
+The app has one root project. A module, a slice or a plugin needs no project: add only its files. A nested project (for example `Tests/`) is optional, and the root project does not compile its folder. The folders select the layers, and the rule engine checks each use against the VSA definition after the build.
+
+Each namespace starts with `Consumer` and follows the folders, for example `Consumer.Features.Billing.Slices.CreateInvoice` or `Consumer.App.Host`. Put the `using` directives inside the namespace. Then a VSA type wins over a namespace of the app with the same name, for example `App` or `Views`. This is a guideline, not an enforced rule. If the file is inside the namespace of the concept records, put some `using` directives outside the namespace. If that is not enough, add an alias inside the namespace.
+
+Write the input of a request or a command, and the output of its response or result, as record parameters. Each module root registers the services of its module in `Configure`, for example its repository: `services.AddScoped<IRepository<Order, OrderId>, OrderRepository>();`.
 
 A command goes from one module to another module. It has one handler and one result. A module sends it with `ICommandSender`. The command is `<Name>Command`, its result `<Name>Result` and its handler `<Name>Handler`, in `Slices/<Name>/`.
 
-`Domain/Shared/` is the published domain of a module: the project `<Module>.Domain.Shared`. Other modules read its types, for example the keys in a command. A type there is immutable and holds data only, with no methods (`VSA1005` to `VSA1007`). The rest of `Domain/` stays private to the module. If the published domain or the presenters of a module use the published domain of other modules, list them in the module root project:
+`Domain/Shared/` is the published domain of a module. Other modules read its types, for example the keys in a command. A type there is immutable and holds data only, with no methods. The rules `UMP010205` to `UMP010207` that check it are off until the review in #143. The rest of `Domain/` stays private to the module. A published domain uses only its own module. The messages, handlers and presenters of a module can use the published domain of all modules.
 
-```xml
-<PropertyGroup>
-  <VsaModuleUses>Resources;Cards</VsaModuleUses>
-</PropertyGroup>
-```
-
-A plugin module is for base types of the app, as the VSA framework is the base of each layer: for example a command base in `Plugins/Game/Contracts/Commands/GameStep.cs`. A plugin module has the layout of the framework: one folder for each layer, for example `Contracts/Commands/` and `Handlers/Commands/`, and no `Slices/` (`VSA0006`). Each layer of each module gets the same layer of each plugin module. A plugin module never uses a module. A plugin layer that uses another plugin module names it in `<VsaPluginUses>`, in its project file. Its root has one class that inherits `Plugin` (`VSA1014`). The host configures the plugin modules first, by name, and it loads them through the modules.
+A plugin module is for base types of the app, as the framework is the base of each layer: for example a command base in `Plugins/Game/Contracts/Commands/GameStep.cs`. A plugin module has the layout of the framework: one folder for each layer, for example `Contracts/Commands/` and `Handlers/Commands/`, and no `Slices/`. Each layer of each module can use the same layer of each plugin module. A plugin module never uses a module. Its root has one class that inherits `Plugin` (`UMP020101`, `UMP020301`). The host configures the plugin modules first, by name, and it loads them through the modules.
 
 ## Commands
 
-Use the `vsa` tool to add code. It writes only new files, and it does not write over a file.
+Use the `umpire` tool to add code. It writes only new files, and it does not write over a file.
 
 ```bash
 dotnet tool restore                          # one time, after a new clone
-dotnet vsa add module <Name>                 # the layers, a status request and a page
-dotnet vsa add request <Name> -m <Module>    # a request, its response and its handler
-dotnet vsa add command <Name> -m <Module>    # a command, its result and its handler
-dotnet vsa add plugin <Name>                 # a plugin module with a base command
-dotnet vsa doctor                            # the tool, VSA.Sdk and the packages have one version
-dotnet test Consumer.slnx                   # the architecture tests and the unit tests
+dotnet umpire add module <Name>                 # the module root, a status request and a page
+dotnet umpire add request <Name> -m <Module>    # a request, its response and its handler
+dotnet umpire add command <Name> -m <Module>    # a command, its result and its handler
+dotnet umpire add plugin <Name>                 # a plugin module with a base command
+dotnet umpire doctor                            # the tool, Umpire.Sdk and the packages have one version
+dotnet test Consumer.slnx                   # the unit tests
 ```
 
-The architecture tests fail until the app has a module: with no module, each rule has nothing to check.
+The rule engine checks each type against the VSA definition after each build of the root project. The root project has the package `Umpire.Engine.Build` for this check. The test project does not check the architecture. The check gives `UMP020101` (a use that the definition denies), `UMP020201` (a type that is not the type of its part) and `UMP020202` (a type in a folder that the definition does not have). To change the rules, derive a definition from `VsaArchitecture`, override `Rules(RuleBook)`, and use it in `App/Host/ConsumerApp.cs` as `App<Vsa<TArchitecture, WebVsaHost>>`.
 
-The VSA packages come from GitHub Packages. Set `GITHUB_TOKEN` before a restore, for example to the output of `gh auth token`.
+| Switch | Effect |
+|---|---|
+| `-p:UmpireCheck=false` | No check in this build |
+| `-p:UmpireCheckMode=Warn` | Each error of the check is a warning |
+| `-p:UmpireUpdateBaseline=true` | Writes the errors of this build to `umpire-baseline.txt`, so the next builds accept them |
 
-To update VSA, change the version in `global.json`, `dotnet-tools.json` and the `VSA.*` package references, then run `dotnet vsa doctor`.
+All build output goes to `artifacts~/` in the block folder (`Directory.Build.props`). No `bin/` or `obj/` folder is next to the code. To get a clean build, delete `artifacts~/`.
+
+The Umpire packages come from GitHub Packages. Set `GITHUB_TOKEN` before a restore, for example to the output of `gh auth token`.
+
+To update Umpire, change the version in `global.json`, `dotnet-tools.json` and the `Umpire.*` package references, then run `dotnet umpire doctor`.
 
 ## Core principles
 
-- **Organize by feature, not by layer.** Each slice is one folder, `Slices/<Feature>/`, with its request, response, events and handler. A slice has one kind of handler.
+- **Organize by slice, not by layer.** Each slice is one folder, `Slices/<Slice>/`, with its request, response, events and handler. A slice has one kind of handler.
 - **Modules are independent.** A module uses another module only through its contracts and its published domain.
 - **Keep shared code small.** Share code only when two or more slices need it.
+- **No comments in C# code** (`UMP010106`). Put the information in a name: a type, a member, a variable or a test.

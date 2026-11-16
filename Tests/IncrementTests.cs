@@ -1,8 +1,8 @@
-using Counter.Domain;
-using Counter.Slices.Increment;
-using VSA.Testing.Unit;
+namespace Consumer.Tests;
 
-namespace App.Tests;
+using Consumer.Features.Counter.Domain;
+using Consumer.Features.Counter.Slices.Increment;
+using Umpire.Vsa.Testing.Unit;
 
 public sealed class IncrementTests : VsaUnitTest {
     [Test]

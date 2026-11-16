@@ -1,8 +1,8 @@
-using Journal.Contracts.Requests;
-using VSA.Contracts;
-using VSA.Handlers;
+namespace Consumer.Plugins.Journal.Handlers.Requests;
 
-namespace Journal.Handlers.Requests;
+using Consumer.Plugins.Journal.Contracts.Requests;
+using Umpire.Messages.Contracts;
+using Umpire.Messages.Handlers;
 
 public sealed class WriteJournal(JournalLog log) : AfterStep<Journaled> {
     public override Task AfterAsync(IEnvelope<Journaled> envelope) {
